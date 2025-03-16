@@ -63,8 +63,31 @@ Many other applications at Voodoo will use consume this API.
 We are planning to put this project in production. According to you, what are the missing pieces to make this project production ready? 
 Please elaborate an action plan.
 
+#### Answer 1:
+To plan a production mode, we first should have a proper architecture, with services, controllers, adapters.
+Second, we should not store any url in the code, but rather in a config file or env file to make the sources adaptable on the environment
+because the list won't be the same in prod and in test environments.
+After that, we need a proper database running on a server, having only sqlite 3 to be on the project is not a good idea, we should deploy a SQL server
+and use it
+A problem that can happen here, is that i wait for the database to populate, in a case of big files, we should not wait for the data to be fetched but send 
+a 200 status (if there is no error before fetching the data).
+Also, i think that having a '/api/games/populate' route is a problem because we can expose the api for a mass abuse of this route. Of course we can add protection
+but this can be harmful for the server performances.
+The code needs to be more performant than what is written here. Also, we should check every incoming data coming from the front-ends to protect data breaches
+or actions we don't want in our database.
+We should also dockerize this project to make it run on every platform. After that we should set our config values in different environments and not expose anything
+relevant in the github repository (No secrets.json for example) with sensible data and we should encrypt them.
+
+
 #### Question 2:
 Let's pretend our data team is now delivering new files every day into the S3 bucket, and our service needs to ingest those files
 every day through the populate API. Could you describe a suitable solution to automate this? Feel free to propose architectural changes.
 
+#### Answer 2:
 
+As said earlier, no url should be set in the code.
+In order to check if there is new files, we should add a cron to check if there is new files comparing to the previous day.
+I think AWS has a function to list every file in a specific bucket. So if we spot a new file, we should call our fonction that will populate the
+database will the new file URL. 
+Also, maybe these files have data that clones data that we already have in database, so we should check everydata incoming comparing to our data.
+This may be very slow if the file is very big.
