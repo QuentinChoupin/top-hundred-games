@@ -1,6 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const { Op } = require('sequelize');
 const db = require('./models');
+const { isString } = require('./helpers');
 
 const app = express();
 
@@ -21,6 +23,27 @@ app.post('/api/games', (req, res) => {
     .catch((err) => {
       console.log('***There was an error creating a game', JSON.stringify(err));
       return res.status(400).send(err);
+    });
+});
+
+app.post('/api/games/search', (req, res) => {
+  const queryParams = {
+    ...(isString(req.body.name) && { name: {
+      [Op.like]: `%${req.body.name}%`,
+    } }),
+    ...(isString(req.body.platform) && {
+      platform: {
+        [Op.like]: `${req.body.platform}`,
+      },
+    }),
+  };
+
+  return db.Game.findAll({
+    where: queryParams,
+  }).then((games) => res.status(200).send(games))
+    .catch((err) => {
+      console.log('***Error searching games', JSON.stringify(err));
+      res.status(400).send(err);
     });
 });
 
