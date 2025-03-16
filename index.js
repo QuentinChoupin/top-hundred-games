@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const { Op } = require('sequelize');
 const db = require('./models');
 const { isString } = require('./helpers');
+const { fetchUrlJson, processFetchedGamesDataList } = require('./service/games');
 
 const app = express();
 
@@ -23,27 +24,6 @@ app.post('/api/games', (req, res) => {
     .catch((err) => {
       console.log('***There was an error creating a game', JSON.stringify(err));
       return res.status(400).send(err);
-    });
-});
-
-app.post('/api/games/search', (req, res) => {
-  const queryParams = {
-    ...(isString(req.body.name) && { name: {
-      [Op.like]: `%${req.body.name}%`,
-    } }),
-    ...(isString(req.body.platform) && {
-      platform: {
-        [Op.like]: `${req.body.platform}`,
-      },
-    }),
-  };
-
-  return db.Game.findAll({
-    where: queryParams,
-  }).then((games) => res.status(200).send(games))
-    .catch((err) => {
-      console.log('***Error searching games', JSON.stringify(err));
-      res.status(400).send(err);
     });
 });
 
@@ -72,6 +52,41 @@ app.put('/api/games/:id', (req, res) => {
           res.status(400).send(err);
         });
     });
+});
+
+app.post('/api/games/search', (req, res) => {
+  const queryParams = {
+    ...(isString(req.body.name) && { name: {
+      [Op.like]: `%${req.body.name}%`,
+    } }),
+    ...(isString(req.body.platform) && {
+      platform: {
+        [Op.like]: `${req.body.platform}`,
+      },
+    }),
+  };
+
+  return db.Game.findAll({
+    where: queryParams,
+  }).then((games) => res.status(200).send(games))
+    .catch((err) => {
+      console.log('***Error searching games', JSON.stringify(err));
+      res.status(400).send(err);
+    });
+});
+
+app.post('/api/games/populate', async (req, res) => {
+  const gamesUrlsPromises = [
+    fetchUrlJson('https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/android.top100.json'),
+    fetchUrlJson('https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/ios.top100.json'),
+  ];
+  const fetchedGameList = await Promise.all(gamesUrlsPromises);
+  let mappedGameList = [];
+  for (const gameList of fetchedGameList) {
+    mappedGameList = mappedGameList.concat(processFetchedGamesDataList(gameList));
+  }
+  await db.Game.bulkCreate(mappedGameList);
+  res.status(200);
 });
 
 app.listen(3000, () => {
