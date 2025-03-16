@@ -90,4 +90,4 @@ typings/
 .idea
 
 #SQLite Database
-.database.sqlite3
+database.sqlite3
