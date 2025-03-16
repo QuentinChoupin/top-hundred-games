@@ -88,3 +88,6 @@ typings/
 .dynamodb/
 
 .idea
+
+#SQLite Database
+.database.sqlite3
