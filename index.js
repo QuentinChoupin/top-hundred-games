@@ -81,9 +81,10 @@ app.post('/api/games/populate', async (req, res) => {
     fetchUrlJson('https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/ios.top100.json'),
   ];
   const fetchedGameList = await Promise.all(gamesUrlsPromises);
+  const gameListSize = 100;
   let mappedGameList = [];
   for (const gameList of fetchedGameList) {
-    mappedGameList = mappedGameList.concat(processFetchedGamesDataList(gameList));
+    mappedGameList = mappedGameList.concat(processFetchedGamesDataList(gameList, gameListSize));
   }
   await db.Game.bulkCreate(mappedGameList);
   res.status(200);
